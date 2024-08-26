@@ -7,7 +7,7 @@ from typing import Dict
 
 
 class TestGithubOrgClient(unittest.TestCase):
-    """Test suite for GithubOggClient class."""
+    """Test suite for GithubOrgClient class."""
     @parameterized.expand([
         ('google', {"login": "google"}),
         ('abc', {"login": "abc"}),
@@ -57,7 +57,8 @@ class TestGithubOrgClient(unittest.TestCase):
 
     @parameterized.expand([
         ({"license": {"key": "my_license"}}, "my_license", True),
-        ({"license": {"key": "other_license"}}, "my_license", False)])
+        ({"license": {"key": "other_license"}}, "my_license", False),
+        ])
     def test_license(self, repo: Dict, license_key: str, expected: bool):
         """Tests the method has_license."""
         output = GithubOrgClient.has_license(repo, license_key)
