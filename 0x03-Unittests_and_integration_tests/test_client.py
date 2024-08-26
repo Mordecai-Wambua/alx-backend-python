@@ -32,3 +32,25 @@ class TestGithubOrgClient(unittest.TestCase):
             obj = GithubOrgClient('google')
             result = obj._public_repos_url
             self.assertEqual(result, output["repos_url"])
+
+    @patch('client.get_json')
+    def test_public_repos(self, mocked_json: MagicMock) -> None:
+        """Tests the method public_repos."""
+        payload = [{"name": "first", "license": {"key": "mit"}},
+                   {"name": "second", "license": {"key": "mit"}},
+                   {"name": "third", "license": {"key": "apache-2.0"}},
+                   {"name": "fourth", "license": {"key": "apache-2.0"}},
+                   ]
+        mocked_json.return_value = payload
+        mock_repos_url = "https://api.github.com/orgs/google/repos"
+        with patch(
+            'client.GithubOrgClient._public_repos_url',
+            new_callable=PropertyMock
+        ) as mocked_repos:
+            mocked_repos.return_value = mock_repos_url
+
+            obj = GithubOrgClient('google')
+            repo = obj.public_repos(license="mit")
+            self.assertEqual(repo, ['first', 'second'])
+            mocked_json.assert_called_once_with(mock_repos_url)
+            mocked_repos.assert_called_once()
