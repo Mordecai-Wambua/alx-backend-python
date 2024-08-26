@@ -32,24 +32,21 @@ class TestGetJson(unittest.TestCase):
         ("http://example.com", {"payload": True}),
         ("http://holberton.io", {"payload": False}),
     ])
-    @patch('requests.get')
-    def test_get_json(self, test_url, test_payload, mock_get):
+    def test_get_json(self, test_url, test_payload):
         """Test that utils.get_json returns the expected result."""
-        mock_response = Mock()
-        mock_response.json.return_value = test_payload
-        mock_get.return_value = mock_response
-        result = get_json(test_url)
-        mock_get.assert_called_once_with(test_url)
-        self.assertEqual(result, test_payload)
+        with patch('utils.requests.get') as mocked_get:
+            mocked_get.return_value.json.return_value = test_payload
+            self.assertEqual(get_json(test_url), test_payload)
+            mocked_get.assert_called_once_with(test_url)
 
 
 class TestMemoize(unittest.TestCase):
     """Test suite for the memoize method"""
-    def test_memoize(self):
+    def test_memoize(self) -> None:
         """
         Test that when calling a_property twice,
 
-        the correct result is returned but a_method is only called once
+        The correct result is returned but a_method is only called once.
         """
         class TestClass:
             def a_method(self):
@@ -59,11 +56,9 @@ class TestMemoize(unittest.TestCase):
             def a_property(self):
                 return self.a_method()
         with patch.object(TestClass, 'a_method',
-                          return_value=lambda: 42
+                          return_value=lambda: 42,
                           ) as mock_function:
             tests = TestClass()
-            first = tests.a_property()
-            second = tests.a_property()
-            self.assertEqual(first, 42)
-            self.assertEqual(second, 42)
+            self.assertEqual(tests.a_property(), 42)
+            self.assertEqual(tests.a_property(), 42)
             mock_function.assert_called_once()
