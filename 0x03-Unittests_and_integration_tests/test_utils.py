@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Unittests for utils.py functions."""
 import unittest
 from unittest.mock import Mock, patch
 from utils import access_nested_map, get_json, memoize
