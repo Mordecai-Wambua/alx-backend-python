@@ -5,6 +5,7 @@ class DatabaseConnection:
     """
     Context manager to handle opening and closing database connections automatically
     """
+
     def __init__(self, database):
         self.database = database
 
