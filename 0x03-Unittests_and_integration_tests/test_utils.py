@@ -3,7 +3,8 @@
 
 import unittest
 from parameterized import parameterized
-from utils import access_nested_map
+from utils import access_nested_map, get_json, memoize
+from unittest.mock import Mock, patch
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -31,6 +32,49 @@ class TestAccessNestedMap(unittest.TestCase):
         with self.assertRaises(KeyError) as context:
             access_nested_map(nested_map, path)
         self.assertEqual(str(context.exception), f"'{exception_message}'")
+
+
+class TestGetJson(unittest.TestCase):
+    """Unit tests for the get_json function"""
+
+    @parameterized.expand(
+        [
+            ("http://example.com", {"payload": True}),
+            ("http://holberton.io", {"payload": False}),
+        ]
+    )
+    def test_get_json(self, url, expected_json_payload):
+        mock_response = Mock()
+        mock_response.json.return_value = expected_json_payload
+
+        with patch("utils.requests.get", return_value=mock_response) as mock_get:
+            response = get_json(url)
+            mock_get.assert_called_once_with(url)
+            self.assertEqual(response, expected_json_payload)
+
+
+class TestMemoize(unittest.TestCase):
+    """Unit tests for the memoize decorator"""
+
+    def test_memoize(self):
+        """Test that the decorator correctly caches the result"""
+
+        class TestClass:
+            def a_method(self):
+                return 42
+
+            @memoize
+            def a_memoized_method(self):
+                return self.a_method()
+
+        with patch.object(TestClass, "a_method", return_value=42) as mock_a_method:
+            test_object = TestClass()
+            result = test_object.a_memoized_method
+            result2 = test_object.a_memoized_method
+
+            self.assertEqual(result, 42)
+            self.assertEqual(result2, 42)
+            mock_a_method.assert_called_once()
 
 
 if __name__ == "__main__":
