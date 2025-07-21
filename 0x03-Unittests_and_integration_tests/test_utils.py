@@ -48,7 +48,11 @@ class TestGetJson(unittest.TestCase):
             ("http://holberton.io", {"payload": False}),
         ]
     )
-    def test_get_json(self, url, expected_json_payload):
+    def test_get_json(
+            self,
+            url,
+            expected_json_payload
+    ):
         """Test successful retrieval of JSON payload from URL"""
         mock_response = Mock()
         mock_response.json.return_value = expected_json_payload
