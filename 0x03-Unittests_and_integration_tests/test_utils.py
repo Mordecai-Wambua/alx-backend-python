@@ -44,6 +44,7 @@ class TestGetJson(unittest.TestCase):
         ]
     )
     def test_get_json(self, url, expected_json_payload):
+        """Test successful retrieval of JSON payload from URL"""
         mock_response = Mock()
         mock_response.json.return_value = expected_json_payload
 
@@ -64,17 +65,21 @@ class TestMemoize(unittest.TestCase):
                 return 42
 
             @memoize
-            def a_memoized_method(self):
+            def a_property(self):
                 return self.a_method()
 
-        with patch.object(TestClass, "a_method", return_value=42) as mock_a_method:
+        with patch.object(
+                TestClass,
+                "a_method",
+                return_value=42
+        ) as mock_method:
             test_object = TestClass()
-            result = test_object.a_memoized_method
-            result2 = test_object.a_memoized_method
+            result = test_object.a_property
+            result2 = test_object.a_property
 
             self.assertEqual(result, 42)
             self.assertEqual(result2, 42)
-            mock_a_method.assert_called_once()
+            mock_method.assert_called_once()
 
 
 if __name__ == "__main__":
