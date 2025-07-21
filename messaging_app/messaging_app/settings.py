@@ -118,8 +118,8 @@ AUTH_USER_MODEL = 'chats.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'chats.authentication.CookieTokenAuthentication',
-        'rest_framework.authentication.TokenAuthentication',           # for token auth (optional)
-
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
