@@ -48,7 +48,7 @@ class Conversation(models.Model):
     conversation_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    participants = models.ManyToManyField(User, related_name="participants")
+    participants = models.ManyToManyField(User, related_name="conversations")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -57,14 +57,17 @@ class Conversation(models.Model):
 
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    sender_id = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="sent_messages"
+    sender = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="messages"
     )
-    conversation_id = models.ForeignKey(
+    conversation = models.ForeignKey(
         Conversation, on_delete=models.CASCADE, related_name="messages"
     )
     message_body = models.TextField(null=False)
     sent_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ["-sent_at"]
+
     def __str__(self):
-        return f"Message {self.message_id} by {self.sender_id}"
+        return f"Message {self.message_id} from {self.sender} in {self.conversation}"

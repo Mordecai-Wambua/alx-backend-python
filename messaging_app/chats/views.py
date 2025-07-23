@@ -1,15 +1,20 @@
-from rest_framework import viewsets, permissions, generics, status
+from rest_framework import viewsets, generics, status, filters
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
+from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
 from .models import Conversation, Message
+from .permissions import IsParticipant
+from .filters import MessageFilter
+from .pagination import MessagePagination
 
 
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -28,7 +33,7 @@ class RegisterUserView(generics.CreateAPIView):
 
 
 class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get("email")
@@ -64,34 +69,38 @@ class LoginView(APIView):
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsParticipant]
 
     def get_queryset(self):
-        # Only return conversations where current user is a participant
+        # Only return conversations where user is a participant
         return Conversation.objects.filter(participants=self.request.user)
 
     def perform_create(self, serializer):
-        # Auto-add current user as a participant when creating a conversation
+        participants_ids = self.request.data.get('participants', [])
+        if not participants_ids:
+            raise serializer.ValidationError("Participants field is required")
         conversation = serializer.save()
-        conversation.participants.add(self.request.user)
+        conversation.participants.set(participants_ids)
+        conversation.save()
 
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsParticipant]
+    pagination_class = MessagePagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = MessageFilter
+    search_fields = ["message_body"]
+    ordering_fields = ["sent_at"]
+    ordering = ["-sent_at"]
 
     def get_queryset(self):
-        # Only return messages in conversations the user participates in
-        return Message.objects.filter(
-            conversation_id__participants=self.request.user
-        ).select_related("sender_id", "conversation_id")
+        conversation_pk = self.kwargs["conversation_pk"]
+        return Message.objects.filter(conversation__pk=conversation_pk, conversation__participants=self.request.user)
 
     def perform_create(self, serializer):
-        # Automatically assign the logged-in user as the sender
-        message = serializer.save(sender_id=self.request.user)
+        conversation_pk = self.kwargs["conversation_pk"]
+        conversation = Conversation.objects.get(pk=conversation_pk)
+        serializer.save(sender=self.request.user, conversation=conversation)
 
-        # Add user to conversation participants if not already
-        conversation = message.conversation_id
-        if self.request.user not in conversation.participants.all():
-            conversation.participants.add(self.request.user)
 

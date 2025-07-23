@@ -40,23 +40,18 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = [
             "message_id",
             "sender",
-            "sender_id",
             "message_body",
             "sent_at",
-            "conversation_id",
         ]
         read_only_fields = ["message_id", "sent_at"]
 
-    def create(self, validated_data):
-        request = self.context.get("request")
-        if request and hasattr(request, "user"):
-            validated_data["sender_id"] = request.user
-        return super().create(validated_data)
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    messages = MessageSerializer(many=True, read_only=True)
-    participants = UserSerializer(many=True, read_only=True)
+    messages = serializers.SerializerMethodField()
+    participants = serializers.PrimaryKeyRelatedField(
+        many=True,queryset=User.objects.all()
+    )
 
     class Meta:
         model = Conversation
@@ -65,3 +60,11 @@ class ConversationSerializer(serializers.ModelSerializer):
             "conversation_id",
             "created_at",
         )
+
+    def get_messages(self, obj):
+        return MessageSerializer(obj.messages.all(), many=True).data
+
+    def validate(self, data):
+        if not data.get("participants"):
+            raise serializers.ValidationError("Conversation must have at least one participant")
+        return data
