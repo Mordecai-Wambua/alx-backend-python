@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
 from .models import Conversation, Message
-from .permissions import IsParticipant
+from .permissions import IsParticipantOfConversation
 from .filters import MessageFilter
 from .pagination import MessagePagination
 
@@ -69,7 +69,7 @@ class LoginView(APIView):
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
-    permission_classes = [IsAuthenticated, IsParticipant]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
     def get_queryset(self):
         # Only return conversations where user is a participant
@@ -86,7 +86,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated, IsParticipant]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = MessageFilter
