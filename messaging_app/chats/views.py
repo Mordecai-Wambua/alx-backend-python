@@ -1,10 +1,7 @@
 from rest_framework import viewsets, generics, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import PermissionDenied
-from django.contrib.auth import authenticate
+from rest_framework.exceptions import PermissionDenied, NotFound
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
 from .models import Conversation, Message
@@ -33,51 +30,13 @@ class RegisterUserView(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-        user = authenticate(request, email=email, password=password)
-
-        if user is not None:
-            token, _ = Token.objects.get_or_create(user=user)
-
-            response = Response({
-                "user": {
-                    "id": user.user_id,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                }
-            })
-
-            # Set token as HTTP-only cookie
-            response.set_cookie(
-                key='auth_token',
-                value=token.key,
-                httponly=True,  # prevents JavaScript access (XSS protection)
-                secure=False,  # set to True in production (HTTPS)
-                samesite='Lax'  # or 'Strict'/'None' depending on your frontend
-            )
-            return response
-
-        return Response(
-            {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
-        )
-
-
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
-
-    def get_queryset(self):
-        # Only return conversations where user is a participant
-        return Conversation.objects.filter(participants=self.request.user)
+    queryset = Conversation.objects.all()
 
     def perform_create(self, serializer):
-        participants_ids = self.request.data.get('participants', [])
+        participants_ids = self.request.data.get("participants", [])
         if not participants_ids:
             raise serializer.ValidationError("Participants field is required")
         conversation = serializer.save()
@@ -89,21 +48,42 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_class = MessageFilter
     search_fields = ["message_body"]
     ordering_fields = ["sent_at"]
     ordering = ["-sent_at"]
 
     def get_queryset(self):
-        conversation_pk = self.kwargs["conversation_pk"]
-        return Message.objects.filter(conversation__pk=conversation_pk, conversation__participants=self.request.user)
+        conversation_id = self.kwargs.get("conversation_pk")
+        if not conversation_id:
+            return Message.objects.none()
+        try:
+            # Check if the conversation exists first
+            conversation = Conversation.objects.get(pk=conversation_id)
+            if self.request.user not in conversation.participants.all():
+                raise PermissionDenied("You are not a participant of this conversation")
+            return Message.objects.filter(conversation=conversation)
+        except Conversation.DoesNotExist:
+            raise NotFound("Conversation not found")
 
     def perform_create(self, serializer):
-        conversation_pk = self.kwargs["conversation_pk"]
-        conversation = Conversation.objects.get(pk=conversation_pk)
+        conversation_id = self.kwargs.get("conversation_pk")
+        if not conversation_id:
+            raise NotFound(detail="Conversation ID is required.")
+
+        try:
+            conversation = Conversation.objects.get(pk=conversation_id)
+        except Conversation.DoesNotExist:
+            raise NotFound(detail="Conversation not found.")
+
         if self.request.user not in conversation.participants.all():
-            raise PermissionDenied(detail="You are not a participant of this conversation", code=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied(
+                detail="You are not a participant of this conversation",
+                code=status.HTTP_403_FORBIDDEN,
+            )
         serializer.save(sender=self.request.user, conversation=conversation)
-
-

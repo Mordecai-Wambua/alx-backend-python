@@ -46,11 +46,10 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ["message_id", "sent_at"]
 
 
-
 class ConversationSerializer(serializers.ModelSerializer):
     messages = serializers.SerializerMethodField()
     participants = serializers.PrimaryKeyRelatedField(
-        many=True,queryset=User.objects.all()
+        many=True, queryset=User.objects.all()
     )
 
     class Meta:
@@ -66,5 +65,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if not data.get("participants"):
-            raise serializers.ValidationError("Conversation must have at least one participant")
+            raise serializers.ValidationError(
+                "Conversation must have at least one participant"
+            )
         return data
