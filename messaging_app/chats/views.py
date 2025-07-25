@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import authenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
@@ -101,6 +102,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         conversation_pk = self.kwargs["conversation_pk"]
         conversation = Conversation.objects.get(pk=conversation_pk)
+        if self.request.user not in conversation.participants.all():
+            raise PermissionDenied(detail="You are not a participant of this conversation", code=status.HTTP_403_FORBIDDEN)
         serializer.save(sender=self.request.user, conversation=conversation)
 
 

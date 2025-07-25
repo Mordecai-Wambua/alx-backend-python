@@ -11,5 +11,8 @@ class IsParticipantOfConversation(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         conversation = obj.conversation
-
-        return user in conversation.participants.all()
+        if request.method in permissions.SAFE_METHODS:
+            return user in conversation.participants.all()
+        if request.method in ['POST', 'PATCH', 'DELETE']:
+            return user in conversation.participants.all()
+        return False
