@@ -1,0 +1,146 @@
+{
+	"info": {
+		"_postman_id": "6b10869b-5d13-453e-9033-08e5aed92edc",
+		"name": "ALX messaging_app",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35151524",
+		"_collection_link": "https://tlefli.postman.co/workspace/Quota~c9aad895-3a0d-4419-8d23-b20dc9bbe77d/collection/35151524-6b10869b-5d13-453e-9033-08e5aed92edc?action=share&source=collection_link&creator=35151524"
+	},
+	"item": [
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"test@gmail.com\",\r\n    \"password\":\"Pass1234\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/api/token/"
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch all conversations",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/v1/conversations"
+			},
+			"response": []
+		},
+		{
+			"name": "get conversation by id",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/v1/conversations/d30bb8fd-4efa-4969-bd59-8a1e34b3774d"
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch messages in a conversation",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/v1/conversations/d30bb8fd-4efa-4969-bd59-8a1e34b3774d/messages/"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Conversation",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"participants\": [\"7985c866184045ecbf09d95da3f3504e\", \"ac46bad8cec244ddae1cd5e20a967ede\"]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/api/v1/conversations/"
+			},
+			"response": []
+		},
+		{
+			"name": "Send a message",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"message_body\":\"Hello\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/api/v1/conversations/d30bb8fd-4efa-4969-bd59-8a1e34b3774d/messages/"
+			},
+			"response": []
+		},
+		{
+			"name": "refresh",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{access_token}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"refresh\":\"{{refresh}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/api/token/refresh/"
+			},
+			"response": []
+		}
+	]
+}
