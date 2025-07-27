@@ -15,8 +15,10 @@ class RequestLoggingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        logger.info(f"User: {request.user} - Path: {request.path}")
+
 
         response = self.get_response(request)
+
+        logger.info(f"User: {request.user} - Path: {request.path}")
 
         return response
