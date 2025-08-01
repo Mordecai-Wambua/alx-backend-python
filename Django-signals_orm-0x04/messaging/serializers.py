@@ -5,6 +5,8 @@ from .models import Message, Notification
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = serializers.ReadOnlyField(source="sender.username")
+    receiver = serializers.ReadOnlyField(source="receiver.username")
+    edited_by = serializers.ReadOnlyField(source="edited_by.username")
 
     class Meta:
         model = Message
@@ -26,3 +28,4 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+

@@ -13,6 +13,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
+    def perform_update(self, serializer):
+        instance = serializer.save(edited_by=self.request.user)
+        instance.save()
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
