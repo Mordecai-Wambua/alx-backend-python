@@ -2,6 +2,8 @@ from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django.contrib.auth.models import User
 from .serializers import (
     MessageSerializer,
@@ -24,6 +26,10 @@ class MessageViewSet(viewsets.ModelViewSet):
             .prefetch_related("replies")
         )
 
+    @method_decorator(cache_page(60))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
@@ -40,7 +46,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="unread")
     def unread(self, request):
         user = request.user
-        unread_messages = Message.unread.unread_for_user(user)
+        unread_messages = Message.unread.unread_for_user(user).only(
+            "message_id", "sender", "content"
+        )
         serializer = self.get_serializer(unread_messages, many=True)
         return Response(serializer.data)
 
