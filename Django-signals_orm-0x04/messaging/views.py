@@ -1,6 +1,5 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.contrib.auth.models import User
@@ -18,9 +17,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Message.objects.filter(sender=self.request.user).select_related(
-            "sender", "receiver", "edited_by", "parent_message"
-        ).prefetch_related("replies")
+        user = self.request.user
+        return (
+            Message.objects.filter(sender=user)
+            .select_related("sender", "receiver", "edited_by", "parent_message")
+            .prefetch_related("replies")
+        )
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
@@ -33,6 +35,13 @@ class MessageViewSet(viewsets.ModelViewSet):
     def thread(self, request, pk=None):
         message = self.get_object()
         serializer = RecursiveMessageSerializer(message)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="unread")
+    def unread(self, request):
+        user = request.user
+        unread_messages = Message.unread.unread_for_user(user)
+        serializer = self.get_serializer(unread_messages, many=True)
         return Response(serializer.data)
 
 
