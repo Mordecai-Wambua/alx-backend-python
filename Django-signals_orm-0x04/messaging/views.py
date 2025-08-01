@@ -1,5 +1,7 @@
-from rest_framework import viewsets, generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, generics, status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import MessageSerializer, RegisterSerializer
 from .models import Message
@@ -21,3 +23,16 @@ class MessageViewSet(viewsets.ModelViewSet):
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+
+class DeleteUser(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response(
+            {"detail": "Account deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )
